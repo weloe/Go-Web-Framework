@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"go_web_framework/route-handle/version3/mygin"
+	"go_web_framework/http-handler/version3/mygin"
 	"net/http"
 )
 
