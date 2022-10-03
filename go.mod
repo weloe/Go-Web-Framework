@@ -1,3 +1,7 @@
-module golang_web_framework
+module example
 
 go 1.18
+
+require (
+	
+)
