@@ -16,8 +16,16 @@ type Context struct {
 	//请求信息
 	Path   string
 	Method string
+	//模糊匹配的k,v
+	Params map[string]string
 	//响应信息
 	StatusCode int
+}
+
+// Param 获取模糊匹配key对应的值
+func (c *Context) Param(key string) string {
+	value, _ := c.Params[key]
+	return value
 }
 
 // 创建Context
