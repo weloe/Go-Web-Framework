@@ -33,9 +33,9 @@ func (n *node) matchChildren(part string) []*node {
 	return nodes
 }
 
-// 构建请求树
+// 构建路由树
 func (n *node) insert(pattern string, parts []string, height int) {
-	//终止条件：height匹配完
+	//终止条件：height匹配完，到了最下层
 	if len(parts) == height {
 		//匹配完给node的pattern赋值
 		n.pattern = pattern
