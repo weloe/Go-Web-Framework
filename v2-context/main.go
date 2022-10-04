@@ -8,7 +8,7 @@ import (
 func main() {
 	r := mygin.New()
 	r.Get("/", func(c *mygin.Context) {
-		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
+		c.HTML(http.StatusOK, "<h1>Hello Weloe</h1>")
 	})
 	r.Get("/hello", func(c *mygin.Context) {
 		// expect /hello?name=123
