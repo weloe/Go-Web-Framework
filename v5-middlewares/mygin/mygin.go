@@ -1,7 +1,9 @@
 package mygin
 
 import (
+	"log"
 	"net/http"
+	"strings"
 )
 
 // HandlerFunc 定义handler
@@ -46,7 +48,7 @@ func New() *MyGin {
 // 添加路由
 func (group *RouterGroup) addRoute(method string, comp string, handler HandlerFunc) {
 	pattern := group.prefix + comp
-
+	log.Printf("=== Route registry %4s - %s ===", method, pattern)
 	group.myGin.router.addRoute(method, pattern, handler)
 }
 
@@ -60,9 +62,22 @@ func (group *RouterGroup) Post(pattern string, handler HandlerFunc) {
 	group.addRoute("POST", pattern, handler)
 }
 
+func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
+	group.middlewares = append(group.middlewares, middlewares...)
+}
+
 //实现ServeHTTP方法
 func (myGin *MyGin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	var middlewares []HandlerFunc
+
+	//根据前缀找到与该请求匹配的中间件
+	for _, group := range myGin.groups {
+		if strings.HasPrefix(req.URL.Path, group.prefix) {
+			middlewares = append(middlewares, group.middlewares...)
+		}
+	}
 	c := newContext(w, req)
+	c.handlers = middlewares
 	myGin.router.handle(c)
 }
 

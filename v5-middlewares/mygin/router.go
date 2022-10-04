@@ -1,7 +1,6 @@
 package mygin
 
 import (
-	"log"
 	"net/http"
 	"strings"
 )
@@ -37,7 +36,6 @@ func parsePattern(pattern string) []string {
 func (r *router) addRoute(method string, pattern string, handler HandlerFunc) {
 	parts := parsePattern(pattern)
 
-	log.Printf("Route %4s - %s", method, pattern)
 	key := method + "-" + pattern
 	_, ok := r.roots[method]
 	if !ok {
@@ -85,13 +83,22 @@ func (r *router) getRoute(method string, path string) (*node, map[string]string)
 
 //处理请求
 func (r *router) handle(c *Context) {
+	//根据请求信息找到匹配的节点和参数
 	n, params := r.getRoute(c.Method, c.Path)
 	if n != nil {
+		//设置参数
 		c.Params = params
+		//拼接得到key
 		key := c.Method + "-" + n.pattern
-		r.handlers[key](c)
+		//r.handlers[key](c)
+		//把匹配到的handler加入中间件handlers中
+		c.handlers = append(c.handlers, r.handlers[key])
 	} else {
-		c.String(http.StatusNotFound, "404 NOT FOUND：%s\n", c.Path)
-	}
+		c.handlers = append(c.handlers, func(c *Context) {
+			c.String(http.StatusNotFound, "404 NOT FOUND：%s\n", c.Path)
 
+		})
+	}
+	//执行handlers
+	c.Next()
 }
