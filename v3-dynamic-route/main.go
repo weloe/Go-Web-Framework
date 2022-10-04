@@ -8,7 +8,7 @@ import (
 func main() {
 	r := mygin.New()
 	r.Get("/", func(c *mygin.Context) {
-		c.HTML(http.StatusOK, "<h1>Hello weloe</h1>")
+		c.HTML(http.StatusOK, "<h1>Hello MyGin</h1>")
 	})
 
 	r.Get("/hello", func(c *mygin.Context) {
