@@ -7,29 +7,57 @@ import (
 // HandlerFunc 定义handler
 type HandlerFunc func(c *Context)
 
+type RouterGroup struct {
+	prefix      string        // 分组的前缀
+	middlewares []HandlerFunc // 中间件
+	parent      *RouterGroup  // 父级分组
+	myGin       *MyGin        // 所有组共享一个myGin
+}
+
+// Group 创建路由分组
+func (group *RouterGroup) Group(prefix string) *RouterGroup {
+	mygin := group.myGin
+	newGroup := &RouterGroup{
+		prefix: group.prefix + prefix,
+		parent: group,
+		myGin:  mygin,
+	}
+	mygin.groups = append(mygin.groups, newGroup)
+	return newGroup
+}
+
 type MyGin struct {
 	//k 请求方法+路径 v 对应请求处理器
 	router *router
+
+	*RouterGroup                // 嵌套属性，相当于继承了RouterGroup
+	groups       []*RouterGroup // 存储所有路由分组
 }
 
 // New MyGin的构造函数
 func New() *MyGin {
-	return &MyGin{router: newRouter()}
+	myGin := &MyGin{router: newRouter()}
+	myGin.RouterGroup = &RouterGroup{myGin: myGin}
+	myGin.groups = []*RouterGroup{myGin.RouterGroup}
+
+	return myGin
 }
 
 // 添加路由
-func (myGin *MyGin) addRoute(method string, pattern string, handler HandlerFunc) {
-	myGin.router.addRoute(method, pattern, handler)
+func (group *RouterGroup) addRoute(method string, comp string, handler HandlerFunc) {
+	pattern := group.prefix + comp
+
+	group.myGin.router.addRoute(method, pattern, handler)
 }
 
 // Get 添加GET请求路由
-func (myGin *MyGin) Get(pattern string, handler HandlerFunc) {
-	myGin.addRoute("GET", pattern, handler)
+func (group *RouterGroup) Get(pattern string, handler HandlerFunc) {
+	group.addRoute("GET", pattern, handler)
 }
 
 // Post 添加POST请求路由
-func (myGin *MyGin) Post(pattern string, handler HandlerFunc) {
-	myGin.addRoute("POST", pattern, handler)
+func (group *RouterGroup) Post(pattern string, handler HandlerFunc) {
+	group.addRoute("POST", pattern, handler)
 }
 
 //实现ServeHTTP方法
