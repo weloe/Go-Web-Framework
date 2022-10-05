@@ -83,6 +83,13 @@ func New() *MyGin {
 	return myGin
 }
 
+// Default 默认使用Logger 日志记录 和Recovery 错误处理 中间件
+func Default() *MyGin {
+	myGin := New()
+	myGin.Use(Logger(), Recovery())
+	return myGin
+}
+
 // 添加路由
 func (group *RouterGroup) addRoute(method string, comp string, handler HandlerFunc) {
 	pattern := group.prefix + comp
