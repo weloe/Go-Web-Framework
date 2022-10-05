@@ -1,8 +1,10 @@
 package mygin
 
 import (
+	"html/template"
 	"log"
 	"net/http"
+	"path"
 	"strings"
 )
 
@@ -28,12 +30,48 @@ func (group *RouterGroup) Group(prefix string) *RouterGroup {
 	return newGroup
 }
 
+func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
+	// 拼接绝对路径
+	absolutePath := path.Join(group.prefix, relativePath)
+	// 资源映射
+	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
+	return func(c *Context) {
+		// 获取请求的路径参数
+		file := c.Param("filepath")
+		// 判断该文件是否存在或者是否有权限访问
+		if _, err := fs.Open(file); err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		fileServer.ServeHTTP(c.Writer, c.Req)
+	}
+}
+
+// Static 增加静态文件映射
+func (group *RouterGroup) Static(relativePath string, root string) {
+	handler := group.createStaticHandler(relativePath, http.Dir(root))
+	urlPattern := path.Join(relativePath, "/*filepath")
+	// 注册handler
+	group.Get(urlPattern, handler)
+}
+
 type MyGin struct {
 	//k 请求方法+路径 v 对应请求处理器
 	router *router
 
-	*RouterGroup                // 嵌套属性，相当于继承了RouterGroup
-	groups       []*RouterGroup // 存储所有路由分组
+	*RouterGroup                     // 嵌套属性，相当于继承了RouterGroup
+	groups        []*RouterGroup     // 存储所有路由分组
+	htmlTemplates *template.Template //
+	funcMap       template.FuncMap   // 自定义模板渲染函数
+}
+
+func (myGin *MyGin) SetFuncMap(funcMap template.FuncMap) {
+	myGin.funcMap = funcMap
+}
+
+func (myGin *MyGin) LoadHTMLGlob(pattern string) {
+	myGin.htmlTemplates = template.Must(template.New("").Funcs(myGin.funcMap).ParseGlob(pattern))
 }
 
 // New MyGin的构造函数
@@ -78,6 +116,7 @@ func (myGin *MyGin) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	c := newContext(w, req)
 	c.handlers = middlewares
+	c.myGin = myGin
 	myGin.router.handle(c)
 }
 

@@ -23,6 +23,8 @@ type Context struct {
 	//中间件
 	handlers []HandlerFunc
 	index    int
+	//myGin
+	myGin *MyGin
 }
 
 // Param 获取模糊匹配key对应的值
@@ -97,10 +99,12 @@ func (c *Context) Data(code int, data []byte) {
 }
 
 // HTML response返回html
-func (c *Context) HTML(code int, html string) {
+func (c *Context) HTML(code int, name string, data interface{}) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
-	c.Writer.Write([]byte(html))
+	if err := c.myGin.htmlTemplates.ExecuteTemplate(c.Writer, name, data); err != nil {
+		c.Fail(500, err.Error())
+	}
 }
 
 func (c *Context) Fail(code int, err string) {
